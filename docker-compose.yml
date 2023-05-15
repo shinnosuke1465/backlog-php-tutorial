@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+# webサーバーを起動するための設定
+  web:
+    build: ./docker/web #dockerフォルダのwebファイルのdockerfileを参照する
+    container_name: web #コンテナの名前
+    environment: #サーバーの環境設定
+      TZ: "Asia/Tokyo" #時刻を日本の時間に合わせる
+    ports: #ブラウザでこのwebサーバーを見れるための参照
+      - "80:80"
+    volumes: #batchフォルダとappフォルダをwebサーバから見れるようにするための設定
+      - ./batch:/udemy/batch
+      - ./app:/udemy/app
+    depends_on:
+      - db
+
+# dbサーバーを起動するための設定
+  db:
+    build: ./docker/db #dockerフォルダのdbファイルのdockerfileを参照する
+    platform: linux/x86_64
+    container_name: db
+    environment:
+      MYSQL_ROOT_PASSWORD: "udemy" #mysqlのパスワード
+      TZ: "Asia/Tokyo"
+    ports:
+      - 3306:3306
+    volumes:
+      - "udemy_data:/var/lib/mysql" #mysqlのデータを保存するための領域
+      - "./docker/db/init:/docker-entrypoint-initdb.d" #テスト用のデータの作成を行うための設定
+      - "./docker/db/my.cnf:/etc/mysql/conf.d/my.cnf" #mysqlの設定の定義
+    restart: always
+
+volumes: #mysqlのデータを保存するためのストレージの作成
+  udemy_data:
+    driver: local
