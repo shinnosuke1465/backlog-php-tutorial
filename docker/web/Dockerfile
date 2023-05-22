@@ -5,8 +5,8 @@ ENV TZ Asia/Tokyo
 #webに公開するファイルの指定
 ENV APACHE_DOCUMENT_ROOT /udemy/app/htdocs
 
-RUN mkdir /udemy
-WORKDIR /udemy
+RUN mkdir /docker-php-udemy
+WORKDIR /docker-php-udemy
 
 #php.iniを指定の場所にコピーする
 COPY ./php.ini /usr/local/etc/php/conf.d/php.ini
