@@ -1,18 +1,65 @@
 <?php
+// 検索条件のphp
 declare(strict_types=1);
-// データベース接続
+
+//データベース接続
+$username = "udemy_user";
+$password = "udemy_pass";
+$hostname = "db";
+$db = "udemy_db";
+$pdo = new PDO("mysql:host={$hostname};dbname={$db};charset=utf8", $username, $password);
+
+$id = '';
+$nameKana = '';
+$gender = '';
+$whereSql = '';
+$param = [];
 // 検索条件が指定されている
-// 社員番号が入力されている
-// 検索条件に社員番号を追加
-// 社員名カナが入力されている
-// 検索条件に社員名カナを追加
-// 性別が入力されている
-// 検索条件に性別を追加
-// 件数取得SQLの実行
-// 社員情報取得SQLの実行
+// isset...変数がセットされていればtrue
+// getパラメータにidとname_kanaがセットされていればture
+if (isset($_GET['id']) && isset($_GET['name_kana'])) {
+    $id = $_GET['id'];
+    $nameKana = $_GET['name_kana'];
+    $gender = isset($_GET['gender']) ? $_GET['gender'] : '';
 
+    // 社員番号が入力されている
+    if ($id !== '') {
+    // 検索条件に社員番号を追加
+    // $whereSqlは、SQLクエリのWHERE句を構築するための文字列を保持する変数です。既存の検索条件がある場合に、新しい条件を追加するために使用されます。.=は、既存の$whereSqlの値に新しい文字列を連結する演算子です。
+    // :id..プレースホルダ。プレースホルダは、値やデータの位置を一時的に示すために使用される特殊な記号や単語です。実際の値が後で指定されることを意味します。
+        $whereSql .= 'AND id = :id ';
+        $param['id'] = $id;
+    }
+    // 社員名カナが入力されている
+    if ($nameKana !== '') {
+        // 検索条件に社員名カナを追加
+        $whereSql .= 'AND name_kana LIKE :name_kana ';
+        $param['name_kana'] = $nameKana . '%';
+    }
+    // 性別が入力されている
+    if ($gender !== '') {
+        // 検索条件に性別を追加
+        $whereSql .= 'AND gender = :gender ';
+        $param['gender'] = $gender;
+    }
+}
+
+//件数取得SQLの実行
+$sql = "SELECT COUNT(*) AS count FROM users WHERE 1 = 1 {$whereSql}";
+// $param = [];
+$stmt = $pdo->prepare($sql);
+$stmt->execute($param);
+$count = $stmt->fetch(PDO::FETCH_ASSOC);
+//var_dump($count);
+
+//社員情報取得SQLの実行
+$sql = "SELECT * FROM users WHERE 1 = 1 {$whereSql} ORDER BY id";
+$stmt = $pdo->prepare($sql);
+$stmt->execute($param);
+// while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+//     var_dump($row);
+// }
 ?>
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -44,16 +91,18 @@ declare(strict_types=1);
           <div class="clearfix">
             <div class="input_area">
               <span class="input_label">社員番号(完全一致)</span>
-              <input type="text" name="id" value="" />
+              <input type="text" name="id" value="<?php echo htmlspecialchars($id); ?>" />
             </div>
             <div class="input_area">
               <span class="input_label">社員名カナ(前方一致)</span>
-              <input type="text" name="name_kana" value="" />
+              <input type="text" name="name_kana" value="<?php echo htmlspecialchars($nameKana); ?>" />
             </div>
             <div class="input_area"><span class="input_label">性別</span>
-              <input type="radio" name="gender" value="男性" id="gender_male" >
+              <input type="radio" name="gender" value="男性" id="gender_male"
+               <?php echo $gender === "男性" ? "checked" : "" ;?>>
               <label for="gender_male">男性</label>
-              <input type="radio" name="gender" value="女性" id="gender_female" >
+              <input type="radio" name="gender" value="女性" id="gender_female"
+               <?php echo $gender === "女性" ? "checked" : "" ;?>>
               <label for="gender_female">女性</label>
             </div>
           </div>
@@ -67,7 +116,7 @@ declare(strict_types=1);
 
     <?php //件数表示 ?>
     <div id="page_area">
-      <div id="page_count">2件ヒットしました</div>
+      <div id="page_count"><?php echo htmlspecialchars($count["count"]); ?>件ヒットしました</div>
     </div>
 
     <div id="search_result">
@@ -86,35 +135,26 @@ declare(strict_types=1);
         </thead>
         <tbody>
           <?php //件数が1件以上 ?>
-          <?php //社員情報取得結果を1行ずつ読込、終端まで繰り返し ?>
-          <tr>
-            <?php //社員情報の表示 ?>
-            <td>100001</td>
-            <td>田中　太郎(タナカ　タロウ)</td>
-            <td>男性</td>
-            <td>システム開発1部</td>
-            <td>部長</td>
-            <td>09011111111</td>
-            <td>100001@example.co.jp</td>
-            <td class="button_area">
-              <button class="edit_button">編集</button>
-              <button class="delete_button">削除</button>
-            </td>
-          </tr>
-          <tr>
-            <?php //社員情報の表示 ?>
-            <td>100002</td>
-            <td>山田　花子(ヤマダ　ハナコ)</td>
-            <td>女性</td>
-            <td>システム開発1部</td>
-            <td>課長</td>
-            <td>09022222222</td>
-            <td>100002@example.co.jp</td>
-            <td class="button_area">
-              <button class="edit_button">編集</button>
-              <button class="delete_button">削除</button>
-            </td>
-          </tr>
+          <?php if ($count["count"] >= 1) { ?>
+            <?php //社員情報取得結果を1行ずつ読込、終端まで繰り返し ?>
+            <?php while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) { ?>
+                <tr>
+                    <?php //社員情報の表示 ?>
+                    <td><?php echo htmlspecialchars($row["id"]); ?></td>
+                    <td><?php echo htmlspecialchars($row["name"]); ?>
+                    (<?php echo htmlspecialchars($row["name_kana"]); ?>)</td>
+                    <td><?php echo htmlspecialchars($row["gender"]); ?></td>
+                    <td><?php echo htmlspecialchars($row["organization"]); ?></td>
+                    <td><?php echo htmlspecialchars($row["post"]); ?></td>
+                    <td><?php echo htmlspecialchars($row["tel"]); ?></td>
+                    <td><?php echo htmlspecialchars($row["mail_address"]); ?></td>
+                    <td class="button_area">
+                    <button class="edit_button">編集</button>
+                    <button class="delete_button">削除</button>
+                    </td>
+                </tr>
+            <?php } ?>
+          <?php } ?>
         </tbody>
       </table>
     </div>
