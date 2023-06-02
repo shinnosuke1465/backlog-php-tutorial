@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-//データベース接続
-$username = "udemy_user";
-$password = "udemy_pass";
-$hostname = "db";
-$db = "udemy_db";
-$pdo = new PDO("mysql:host={$hostname};dbname={$db};charset=utf8", $username, $password);
+require_once(dirname(__DIR__) . "/library/config.php");
+
+// データベース接続
+$pdo = new PDO(
+  "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8", DB_USER, DB_PASS);
+
 
 $id = '';
 $nameKana = '';
